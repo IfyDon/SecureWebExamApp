@@ -1,0 +1,6 @@
+secret_key.txt
+exam_results.xlsx
+__pycache__/
+*.pyc
+.venv/
+venv/
