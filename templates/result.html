@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exam Result</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background: {{ '#001A00' if passed else '#1A0A00' }};
+        }
+        .result-card {
+            background: {{ '#0A2A0A' if passed else '#2A1A00' }};
+            padding: 40px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        .result-icon {
+            font-size: 72px;
+        }
+        .score-circle {
+            background: {{ '#0A2A0A' if passed else '#2A1A00' }};
+            border: 3px solid {{ '#00AA44' if passed else '#AA6600' }};
+            border-radius: 50%;
+            width: 160px;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+        }
+        .score-circle div:first-child {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .student-info {
+            margin: 20px 0;
+            color: #A0B8C8;
+        }
+        .close-btn {
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: {{ '#0A3A1A' if passed else '#3A1A00' }};
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="result-card">
+    <div class="result-icon">{{ '✅' if passed else '❌' }}</div>
+    <h1>{{ 'EXAM COMPLETE' if passed else 'FAILED' }}</h1>
+    <div class="score-circle">
+        <div>{{ score }} / {{ total }}</div>
+        <div>{{ ((score/total)*100)|round|int }}% — {{ 'PASS ✓' if passed else 'FAIL ✗' }}</div>
+    </div>
+    <div class="student-info" id="studentInfo"></div>
+    {% if timeout %}
+        <p style="color:#FFAA44;">⏱ Exam ended: Time expired</p>
+    {% endif %}
+    <p style="color:#607080;">✅ Result saved to: exam_results.xlsx</p>
+    <button class="close-btn" onclick="window.location.href='/'">Close</button>
+</div>
+<script>
+    // Get student info from URL parameters (passed from exam.html)
+    const urlParams = new URLSearchParams(window.location.search);
+    const name = urlParams.get('name');
+    const cls = urlParams.get('cls');
+    const reg = urlParams.get('reg');
+    if (name && cls && reg) {
+        document.getElementById('studentInfo').innerHTML = `👤 ${name} | 🎓 ${cls} | 📋 ${reg}`;
+    } else {
+        // Fallback: try to fetch from session (will likely fail because session cleared)
+        fetch('/session_info')
+            .then(res => res.json())
+            .then(data => {
+                if (data.name) {
+                    document.getElementById('studentInfo').innerHTML = `👤 ${data.name} | 🎓 ${data.cls} | 📋 ${data.reg}`;
+                }
+            })
+            .catch(() => {});
+    }
+</script>
+</body>
+</html>

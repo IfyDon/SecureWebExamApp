@@ -2,88 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Secure Exam</title>
+    <title>Secure Python CBT</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        body { background: #0A0F1E; font-family: Arial, sans-serif; overflow: hidden; height: 100vh; }
-        .exam-container { display: flex; flex-direction: column; height: 100vh; }
-        .top-bar {
-            background: #0D2137; padding: 12px 24px;
-            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
         }
-        .title { color: #F0C040; font-weight: bold; font-size: 1.2rem; }
-        .student-info { color: #90B8D8; font-size: 0.9rem; }
-        .timer { font-size: 1.8rem; font-weight: bold; color: #00FF88; font-family: monospace; }
-        .progress { color: #A0C4E0; }
-        .content { flex: 1; padding: 30px; overflow-y: auto; background: #0A0F1E; }
-        .question-card {
-            background: #0E2236; border: 2px solid #1A5080; border-radius: 16px;
-            padding: 30px; max-width: 800px; margin: 0 auto;
+        .container {
+            width: 70%;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
         }
-        .question-header {
-            background: #1A5080; display: inline-block; padding: 6px 18px;
-            border-radius: 20px; margin-bottom: 20px; font-weight: bold;
+        .timer {
+            font-size: 22px;
+            color: red;
+            font-weight: bold;
+            text-align: right;
         }
-        .question-text { font-size: 1.3rem; font-weight: bold; margin-bottom: 30px; }
-        .options { display: flex; flex-direction: column; gap: 12px; }
-        .option {
-            background: #122A42; padding: 12px 20px; border-radius: 10px;
-            cursor: pointer; transition: 0.2s; border: 1px solid transparent;
+        .question {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 6px;
         }
-        .option:hover { background: #1A3A55; transform: translateX(5px); }
-        .option.selected { background: #1A5C8A; border-color: #4A90D9; }
-        .nav-bar {
-            background: #0D2137; padding: 15px 24px;
-            display: flex; justify-content: space-between; gap: 12px;
+        .question p {
+            font-weight: bold;
+            margin-bottom: 10px;
         }
-        .nav-bar button {
-            padding: 10px 24px; font-size: 1rem; font-weight: bold;
-            border: none; border-radius: 8px; cursor: pointer;
+        .question label {
+            display: block;
+            margin: 5px 0;
+            cursor: pointer;
         }
-        .nav-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
-        #prevBtn { background: #1A3A5C; color: white; }
-        #nextBtn { background: #1A5C3A; color: white; }
-        #submitBtn { background: #8B0000; color: white; }
-        .camera-overlay {
-            position: fixed; bottom: 20px; right: 20px;
-            width: 200px; height: 150px; border: 3px solid #F0C040;
-            border-radius: 12px; overflow: hidden; background: black; z-index: 1000;
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
         }
-        .camera-overlay video { width: 100%; height: 100%; object-fit: cover; }
-        .camera-label {
-            position: absolute; bottom: 5px; right: 8px;
-            background: #F0C040; color: black; font-size: 10px;
-            padding: 2px 8px; border-radius: 20px; font-weight: bold;
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        video {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 200px;
+            border: 3px solid black;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+        #over {
+            display: none;
+            text-align: center;
+            font-size: 60px;
+            color: red;
+            font-weight: bold;
+            margin-top: 200px;
         }
     </style>
 </head>
 <body>
-<div class="exam-container">
-    <div class="top-bar">
-        <div class="title">🔒 SECURE EXAMINATION</div>
-        <div class="student-info" id="studentInfo"></div>
-        <div class="timer" id="timer">⏱ 02:00</div>
-        <div class="progress" id="progress">Q 1 / 5</div>
-    </div>
-    <div class="content">
-        <div class="question-card">
-            <div class="question-header" id="qHeader">QUESTION 1 OF 5</div>
-            <div class="question-text" id="questionText"></div>
-            <div class="options" id="optionsContainer"></div>
-        </div>
-    </div>
-    <div class="nav-bar">
+<div class="container" id="exam">
+    <div class="timer">Time Left: <span id="time">02:00</span></div>
+    <h2>Python CBT Examination</h2>
+    <div id="questions-container"></div>
+    <div class="nav-buttons">
         <button id="prevBtn" disabled>◀ Previous</button>
         <button id="nextBtn">Next ▶</button>
-        <button id="submitBtn" class="submit">✅ SUBMIT EXAM</button>
-    </div>
-    <div class="camera-overlay">
-        <video id="cameraVideo" autoplay muted playsinline></video>
-        <div class="camera-label">📷 MONITORING</div>
+        <button id="submitBtn" style="background:#8B0000;">✅ SUBMIT EXAM</button>
     </div>
 </div>
+<div id="over">EXAMINATION OVER</div>
+<video id="camera" autoplay muted playsinline></video>
+
 <script>
-    // Questions passed from Flask (embedded in template)
     const questions = {{ questions | tojson }};
     let currentQ = 0;
     let answers = {};
@@ -91,38 +95,43 @@
     let timerInterval = null;
     let examEnded = false;
     let cameraStream = null;
-    let focusActive = false;   // delay after fullscreen
+    let focusActive = false;
+    let studentInfo = { name: '', cls: '', reg: '' };  // store student details
 
-    // DOM elements
-    const studentInfo = document.getElementById('studentInfo');
-    const timerDisplay = document.getElementById('timer');
-    const progressDisplay = document.getElementById('progress');
-    const qHeader = document.getElementById('qHeader');
-    const questionText = document.getElementById('questionText');
-    const optionsDiv = document.getElementById('optionsContainer');
+    const questionsContainer = document.getElementById('questions-container');
+    const timerDisplay = document.getElementById('time');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     const submitBtn = document.getElementById('submitBtn');
-    const cameraVideo = document.getElementById('cameraVideo');
+    const cameraVideo = document.getElementById('camera');
 
     // Fetch student info from session
-    fetch('/session_info')  // We'll add this route
+    fetch('/session_info')
         .then(res => res.json())
         .then(data => {
-            studentInfo.textContent = `👤 ${data.name} | 🎓 ${data.cls} | 📋 ${data.reg}`;
+            if (data.name) {
+                studentInfo = data;
+                // Optionally display in top bar (add an element if needed)
+            }
         });
 
-    // Security: disable right-click, copy, paste, Ctrl shortcuts
+    // ---------- FULL Ctrl / Cmd BLOCK ----------
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.addEventListener('copy', e => e.preventDefault());
     document.addEventListener('cut', e => e.preventDefault());
     document.addEventListener('paste', e => e.preventDefault());
     document.addEventListener('keydown', e => {
-        if (e.ctrlKey || e.metaKey) { e.preventDefault(); return false; }
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) { e.preventDefault(); return false; }
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            return false;
+        }
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+            e.preventDefault();
+            return false;
+        }
     });
 
-    // Fullscreen & tab detection
+    // Fullscreen
     function enterFullscreen() {
         const elem = document.documentElement;
         if (elem.requestFullscreen) elem.requestFullscreen();
@@ -132,6 +141,8 @@
             terminateExam('Fullscreen exited! Exam terminated.');
         }
     });
+
+    // Tab / window detection
     let blurTimeout = null;
     window.addEventListener('blur', () => {
         if (!examEnded && focusActive) {
@@ -154,11 +165,14 @@
             cameraStream = stream;
             cameraVideo.srcObject = stream;
         } catch (err) {
-            document.querySelector('.camera-label').innerHTML = '📷 No Camera';
+            console.warn("Camera not available");
         }
     }
     function stopCamera() {
-        if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
     }
 
     // Timer
@@ -172,45 +186,79 @@
                 timeLeft--;
                 const mins = Math.floor(timeLeft / 60);
                 const secs = timeLeft % 60;
-                timerDisplay.textContent = `⏱ ${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+                timerDisplay.textContent = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
                 if (timeLeft <= 30) timerDisplay.style.color = '#FF4444';
             }
         }, 1000);
     }
 
-    // Render question
-    function renderQuestion() {
-        const q = questions[currentQ];
-        qHeader.textContent = `QUESTION ${currentQ+1} OF ${questions.length}`;
-        progressDisplay.textContent = `Q ${currentQ+1} / ${questions.length}`;
-        questionText.textContent = q.question;
-        optionsDiv.innerHTML = '';
-        q.options.forEach((opt, idx) => {
-            const letter = String.fromCharCode(65+idx);
-            const div = document.createElement('div');
-            div.className = 'option';
-            div.textContent = opt;
-            div.dataset.value = letter;
-            if (answers[currentQ] === letter) div.classList.add('selected');
-            div.addEventListener('click', () => {
-                if (examEnded) return;
-                document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
-                div.classList.add('selected');
-                answers[currentQ] = letter;
+    // Render all questions (radio buttons)
+    function renderAllQuestions() {
+        questionsContainer.innerHTML = '';
+        questions.forEach((q, idx) => {
+            const qDiv = document.createElement('div');
+            qDiv.className = 'question';
+            qDiv.id = `q-${idx}`;
+            qDiv.style.display = idx === currentQ ? 'block' : 'none';
+            const questionText = document.createElement('p');
+            questionText.textContent = q.question;
+            qDiv.appendChild(questionText);
+            q.options.forEach((opt, optIdx) => {
+                const letter = String.fromCharCode(65 + optIdx);
+                const label = document.createElement('label');
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = `q${idx}`;
+                radio.value = letter;
+                if (answers[idx] === letter) radio.checked = true;
+                radio.addEventListener('change', () => {
+                    if (!examEnded) answers[idx] = letter;
+                });
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(` ${opt}`));
+                qDiv.appendChild(label);
+                qDiv.appendChild(document.createElement('br'));
             });
-            optionsDiv.appendChild(div);
+            questionsContainer.appendChild(qDiv);
         });
+        updateNavButtons();
+    }
+
+    function showQuestion(index) {
+        for (let i = 0; i < questions.length; i++) {
+            const el = document.getElementById(`q-${i}`);
+            if (el) el.style.display = i === index ? 'block' : 'none';
+        }
+        updateNavButtons();
+    }
+
+    function updateNavButtons() {
         prevBtn.disabled = currentQ === 0;
         nextBtn.disabled = currentQ === questions.length - 1;
     }
 
-    function nextQuestion() { if (!examEnded && currentQ < questions.length-1) { currentQ++; renderQuestion(); } }
-    function prevQuestion() { if (!examEnded && currentQ > 0) { currentQ--; renderQuestion(); } }
+    function nextQuestion() {
+        if (examEnded) return;
+        if (currentQ < questions.length - 1) {
+            currentQ++;
+            showQuestion(currentQ);
+        }
+    }
+
+    function prevQuestion() {
+        if (examEnded) return;
+        if (currentQ > 0) {
+            currentQ--;
+            showQuestion(currentQ);
+        }
+    }
 
     async function submitExam(timeout = false) {
         if (examEnded) return;
         if (!timeout && Object.keys(answers).length < questions.length) {
-            if (!confirm(`You have ${questions.length - Object.keys(answers).length} unanswered question(s). Submit anyway?`)) return;
+            if (!confirm(`You have ${questions.length - Object.keys(answers).length} unanswered question(s). Submit anyway?`)) {
+                return;
+            }
         }
         examEnded = true;
         focusActive = false;
@@ -222,8 +270,9 @@
             body: JSON.stringify({ answers, timeout })
         });
         const result = await response.json();
-        // Redirect to result page with query params
-        window.location.href = `/result?score=${result.score}&total=${result.total}&passed=${result.passed}&timeout=${timeout}`;
+        // Pass student info to result page via URL parameters
+        const url = `/result?score=${result.score}&total=${result.total}&passed=${result.passed}&timeout=${timeout}&name=${encodeURIComponent(studentInfo.name)}&cls=${encodeURIComponent(studentInfo.cls)}&reg=${encodeURIComponent(studentInfo.reg)}`;
+        window.location.href = url;
     }
 
     function terminateExam(reason) {
@@ -233,7 +282,6 @@
         clearInterval(timerInterval);
         stopCamera();
         alert(reason);
-        // Optionally send termination to server
         fetch('/submit_exam', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -241,16 +289,19 @@
         }).then(() => window.location.href = '/');
     }
 
-    // Initialize
-    enterFullscreen();
-    startCamera();
-    renderQuestion();
-    startTimer();
-    setTimeout(() => { if (!examEnded) focusActive = true; }, 1000);
+    async function init() {
+        await startCamera();
+        renderAllQuestions();
+        startTimer();
+        enterFullscreen();
+        setTimeout(() => { if (!examEnded) focusActive = true; }, 1000);
+    }
 
     prevBtn.addEventListener('click', prevQuestion);
     nextBtn.addEventListener('click', nextQuestion);
     submitBtn.addEventListener('click', () => submitExam(false));
+
+    init();
 </script>
 </body>
 </html>
