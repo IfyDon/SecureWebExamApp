@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Secure Python CBT</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 70%;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        .timer {
+            font-size: 22px;
+            color: red;
+            font-weight: bold;
+            text-align: right;
+        }
+        .question {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 6px;
+        }
+        .question p {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .question label {
+            display: block;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        video {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 200px;
+            border: 3px solid black;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+        #over {
+            display: none;
+            text-align: center;
+            font-size: 60px;
+            color: red;
+            font-weight: bold;
+            margin-top: 200px;
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="exam">
+    <div class="timer">Time Left: <span id="time">02:00</span></div>
+    <h2>Python CBT Examination</h2>
+    <div id="questions-container"></div>
+    <div class="nav-buttons">
+        <button id="prevBtn" disabled>◀ Previous</button>
+        <button id="nextBtn">Next ▶</button>
+        <button id="submitBtn" style="background:#8B0000;">✅ SUBMIT EXAM</button>
+    </div>
+</div>
+<div id="over">EXAMINATION OVER</div>
+<video id="camera" autoplay muted playsinline></video>
+
+<script>
+    const questions = {{ questions | tojson }};
+    let currentQ = 0;
+    let answers = {};
+    let timeLeft = 120;
+    let timerInterval = null;
+    let examEnded = false;
+    let cameraStream = null;
+    let focusActive = false;
+    let studentInfo = { name: '', cls: '', reg: '' };  // store student details
+
+    const questionsContainer = document.getElementById('questions-container');
+    const timerDisplay = document.getElementById('time');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const cameraVideo = document.getElementById('camera');
+
+    // Fetch student info from session
+    fetch('/session_info')
+        .then(res => res.json())
+        .then(data => {
+            if (data.name) {
+                studentInfo = data;
+                // Optionally display in top bar (add an element if needed)
+            }
+        });
+
+    // ---------- FULL Ctrl / Cmd BLOCK ----------
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('copy', e => e.preventDefault());
+    document.addEventListener('cut', e => e.preventDefault());
+    document.addEventListener('paste', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            return false;
+        }
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Fullscreen
+    function enterFullscreen() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) elem.requestFullscreen();
+    }
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && !examEnded && focusActive) {
+            terminateExam('Fullscreen exited! Exam terminated.');
+        }
+    });
+
+    // Tab / window detection
+    let blurTimeout = null;
+    window.addEventListener('blur', () => {
+        if (!examEnded && focusActive) {
+            blurTimeout = setTimeout(() => {
+                if (!examEnded && focusActive) terminateExam('Tab switch detected! Exam terminated.');
+            }, 200);
+        }
+    });
+    window.addEventListener('focus', () => clearTimeout(blurTimeout));
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && !examEnded && focusActive) {
+            terminateExam('Tab switch detected! Exam terminated.');
+        }
+    });
+
+    // Camera
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            cameraStream = stream;
+            cameraVideo.srcObject = stream;
+        } catch (err) {
+            console.warn("Camera not available");
+        }
+    }
+    function stopCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+    }
+
+    // Timer
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            if (examEnded) return;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                submitExam(true);
+            } else {
+                timeLeft--;
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                timerDisplay.textContent = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+                if (timeLeft <= 30) timerDisplay.style.color = '#FF4444';
+            }
+        }, 1000);
+    }
+
+    // Render all questions (radio buttons)
+    function renderAllQuestions() {
+        questionsContainer.innerHTML = '';
+        questions.forEach((q, idx) => {
+            const qDiv = document.createElement('div');
+            qDiv.className = 'question';
+            qDiv.id = `q-${idx}`;
+            qDiv.style.display = idx === currentQ ? 'block' : 'none';
+            const questionText = document.createElement('p');
+            questionText.textContent = q.question;
+            qDiv.appendChild(questionText);
+            q.options.forEach((opt, optIdx) => {
+                const letter = String.fromCharCode(65 + optIdx);
+                const label = document.createElement('label');
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = `q${idx}`;
+                radio.value = letter;
+                if (answers[idx] === letter) radio.checked = true;
+                radio.addEventListener('change', () => {
+                    if (!examEnded) answers[idx] = letter;
+                });
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(` ${opt}`));
+                qDiv.appendChild(label);
+                qDiv.appendChild(document.createElement('br'));
+            });
+            questionsContainer.appendChild(qDiv);
+        });
+        updateNavButtons();
+    }
+
+    function showQuestion(index) {
+        for (let i = 0; i < questions.length; i++) {
+            const el = document.getElementById(`q-${i}`);
+            if (el) el.style.display = i === index ? 'block' : 'none';
+        }
+        updateNavButtons();
+    }
+
+    function updateNavButtons() {
+        prevBtn.disabled = currentQ === 0;
+        nextBtn.disabled = currentQ === questions.length - 1;
+    }
+
+    function nextQuestion() {
+        if (examEnded) return;
+        if (currentQ < questions.length - 1) {
+            currentQ++;
+            showQuestion(currentQ);
+        }
+    }
+
+    function prevQuestion() {
+        if (examEnded) return;
+        if (currentQ > 0) {
+            currentQ--;
+            showQuestion(currentQ);
+        }
+    }
+
+    async function submitExam(timeout = false) {
+        if (examEnded) return;
+        if (!timeout && Object.keys(answers).length < questions.length) {
+            if (!confirm(`You have ${questions.length - Object.keys(answers).length} unanswered question(s). Submit anyway?`)) {
+                return;
+            }
+        }
+        examEnded = true;
+        focusActive = false;
+        clearInterval(timerInterval);
+        stopCamera();
+        const response = await fetch('/submit_exam', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ answers, timeout })
+        });
+        const result = await response.json();
+        // Pass student info to result page via URL parameters
+        const url = `/result?score=${result.score}&total=${result.total}&passed=${result.passed}&timeout=${timeout}&name=${encodeURIComponent(studentInfo.name)}&cls=${encodeURIComponent(studentInfo.cls)}&reg=${encodeURIComponent(studentInfo.reg)}`;
+        window.location.href = url;
+    }
+
+    function terminateExam(reason) {
+        if (examEnded) return;
+        examEnded = true;
+        focusActive = false;
+        clearInterval(timerInterval);
+        stopCamera();
+        alert(reason);
+        fetch('/submit_exam', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ answers, timeout: false, terminated: true, reason })
+        }).then(() => window.location.href = '/');
+    }
+
+    async function init() {
+        await startCamera();
+        renderAllQuestions();
+        startTimer();
+        enterFullscreen();
+        setTimeout(() => { if (!examEnded) focusActive = true; }, 1000);
+    }
+
+    prevBtn.addEventListener('click', prevQuestion);
+    nextBtn.addEventListener('click', nextQuestion);
+    submitBtn.addEventListener('click', () => submitExam(false));
+
+    init();
+</script>
+</body>
+</html>

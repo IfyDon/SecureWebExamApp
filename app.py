@@ -8,7 +8,7 @@ app.secret_key = 'your-secret-key-change-in-production'  # Required for session
 
 EXCEL_FILE = "exam_results.xlsx"
 
-# ─────────────────────────── QUESTIONS ───────────────────────────
+#  ---------- PYTHON QUESTIONS (original) ----------
 QUESTIONS = [
     {
         "question": "1. What is the correct way to create a list in Python?",
@@ -34,10 +34,10 @@ QUESTIONS = [
         "question": "5. What does the 'len()' function do?",
         "options": ["A. Returns the length of an object", "B. Converts to lowercase", "C. Rounds a number", "D. Finds the maximum value"],
         "answer": "A"
-    },
+    }
 ]
 
-# ─────────────────────────── EXCEL HELPER ───────────────────────────
+# ------------------------- EXCEL HELPER -------------------------
 def init_excel():
     if not os.path.exists(EXCEL_FILE):
         wb = openpyxl.Workbook()
@@ -59,7 +59,7 @@ def save_result(name, cls, reg, score, total, remarks=""):
     ws.append([row_num - 1, name, cls, reg, score, total, f"{pct}%", status, dt, remarks])
     wb.save(EXCEL_FILE)
 
-# ─────────────────────────── ROUTES ───────────────────────────
+# ------------------------- ROUTES -------------------------
 @app.route('/')
 def index():
     return render_template('register.html')
@@ -97,7 +97,6 @@ def submit_exam():
     total = len(QUESTIONS)
     reason = "Time Expired" if timeout else "Student Submitted"
     save_result(student['name'], student['cls'], student['reg'], score, total, reason)
-    # Clear session after exam
     session.clear()
     return jsonify({"score": score, "total": total, "passed": score >= total/2})
 
@@ -107,7 +106,6 @@ def session_info():
     if student:
         return jsonify(student)
     return jsonify({}), 401
-
 
 @app.route('/result')
 def result():
